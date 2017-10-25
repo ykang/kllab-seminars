@@ -2,3 +2,5 @@
 **/.texpadtmp/**
 **/*.*~
 **/*.log
+**/.Rhistory
+**/Makefile

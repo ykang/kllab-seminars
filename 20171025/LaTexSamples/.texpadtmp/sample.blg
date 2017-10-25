@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: /Users/dodo/ownCloud/Seminars/讨论班/2017秋/20171025/LaTexSamples/.texpadtmp/sample.aux
+The style file: agsm.bst
+Database file #1: ../sample.bib
+You've used 2 entries,
+            2909 wiz_defined-function locations,
+            654 strings with 5237 characters,
+and the built_in function-call counts, 7566 in all, are:
+= -- 1224
+> -- 94
+< -- 0
++ -- 573
+- -- 28
+* -- 650
+:= -- 1538
+add.period$ -- 2
+call.type$ -- 2
+change.case$ -- 28
+chr.to.int$ -- 2
+cite$ -- 2
+duplicate$ -- 32
+empty$ -- 69
+format.name$ -- 40
+if$ -- 1357
+int.to.chr$ -- 5
+int.to.str$ -- 0
+missing$ -- 2
+newline$ -- 9
+num.names$ -- 20
+pop$ -- 6
+preamble$ -- 1
+purify$ -- 30
+quote$ -- 0
+skip$ -- 27
+stack$ -- 0
+substring$ -- 1713
+swap$ -- 6
+text.length$ -- 28
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 8
+warning$ -- 0
+while$ -- 44
+width$ -- 0
+write$ -- 26

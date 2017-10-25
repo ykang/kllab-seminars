@@ -1,0 +1,6 @@
+\beamer@endinputifotherversion {3.36pt}
+\beamer@sectionintoc {1}{Motivation}{2}{0}{1}
+\beamer@sectionintoc {2}{Time series features}{7}{0}{2}
+\beamer@sectionintoc {3}{New time series generation in feature space}{21}{0}{3}
+\beamer@sectionintoc {4}{Comparison of time series forecasting methods in the feature space}{31}{0}{4}
+\beamer@sectionintoc {5}{Conclusions}{38}{0}{5}

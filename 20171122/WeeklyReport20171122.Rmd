@@ -1,0 +1,630 @@
+---
+title: "WeeklyReport20171122"
+author: "中央财经大学-应用统计专硕16-程凡"
+date: "2017年11月22日"
+output: html_document
+---
+---
+
+1 北京住宅数据
+---
+```{r}
+# dealing with HousePrice data
+HousePrice <- read.csv("C:/Users/cheng/Desktop/Thesis/2HousingData/HousePrice2014-2017.csv")
+# View(HousePrice[1:1000,])
+head(HousePrice, 200)
+summary(HousePrice)
+colnames(HousePrice)
+
+# choose variables as Y, X 
+Y <- HousePrice[, 6]
+X <- HousePrice[, c(2,3,4,5,8,9,10,11,12)]
+```
+
+```{r}
+data.frame(table(HousePrice$区域)) # 16
+data.frame(table(HousePrice$楼盘名))[1:50,] # 946
+```
+
+*问题*：
+1.住宅数据中与房价有关的变量只有*已售统计均价*，将其作为Y。
+2.一些变量存在相关关系：
+已售统计销售金额 = 已售统计面积 × 已售统计均价，考虑将*已售统计销售金额*变量删除；
+对于同一楼盘，累计已售套数 + 累计未售套数 = Constant，如何处理？
+
+
+---
+
+2 构建响应面模型
+---
+```{r}
+#! /usr/bin/env Rscript
+##########################################################################################
+##                            INTRODUCTION AND HELP
+##
+##----------------------------------------------------------------------------------------
+## This is the main settings file for the moving knots project with multi-shrinkage model.
+##
+##---USER INPUTS--------------------------------------------------------------------------
+## Variables commented with all CAPITAL LETTERS are user defined variables.
+##
+##---OUTPUTS------------------------------------------------------------------------------
+## Variables named with the format of "OUT.xxx" are the final outputs
+##
+##---HOW TO SPEEDUP-----------------------------------------------------------------------
+## You may recompile R from source with an optimized BLAS (Basic Linear Algebra
+## Subprograms), e.g ATLAS(BSD-style license), GotoBLAS(BSD-style license ), Intel Math
+## Kernel Library(free for personal use). All of them support multi-threaded computing via
+## openMP. Read the R-admin guide and individual BLAS users guide to enable it.
+##
+##---------------------------------------------------------------------------------------
+## AUTHOR: Feng Li,  Department of statistics, Stockholm University, Sweden
+## DATE:   Sat Mar 05 19:05:40 CET 2011
+##
+##########################################################################################
+
+##########################################################################################
+##                                   User settings
+##########################################################################################
+
+##----------------------------------------------------------------------------------------
+## Initialize R environment
+##----------------------------------------------------------------------------------------
+
+rm(list = ls())
+gc()
+
+## LOAD DEPENDENCES
+require("methods")
+require("MASS")
+require("Matrix")
+require("mvtnorm")
+
+## PATH FOR THE MOVING KNOTS LIBRARY
+path.lib <- "E:/code/movingknots"
+
+## SAVE OUTPUT PATH
+save.output <- "E:/code/running" # "save.output = FALSE" will not save anything
+
+## Load sourceDir() function
+sys.source(file.path("E:/code/flutils/R/systools/sourceDir.R"),
+           envir = .GlobalEnv)
+
+sourceDir("E:/code/flutils/R", recursive = TRUE)
+
+## Load user defined functions
+sourceDir(file.path(path.lib, "R", c("algorithms", "models/linear")),
+          recursive = TRUE)
+
+
+## sourceDir(file.path(path.lib, "R", c("utils", "algorithms", "models/linear")),
+##           recursive = TRUE)
+
+
+## MCMC TRAJECTORY
+track.MCMC = TRUE
+
+##----------------------------------------------------------------------------------------
+## Data input and summary
+##----------------------------------------------------------------------------------------
+
+## SIMULATE DATA
+## DGP (OPTIONAL)
+
+## LOAD THE DATA SOURCE
+## The data are formated as
+## "X":        n-by-m matrix
+## "Y":        n-by-p matrix
+## "X.name"    m      character
+## "Y.name"    p      character
+
+load(file.path(path.lib, "data/Rajan.Rdata"))
+
+## STANDARDIZED THE DATA (OPTIONAL)
+data <- StdData(X[, c(2, 4), drop = FALSE], method = "norm-0-1")
+x <- data[["data"]]
+
+## no. of observations
+(n <- dim(Y)[1])
+
+## no. of dimensions
+(p <- dim(Y)[2])
+
+## no. of original covariates
+(m <- dim(x)[2])
+
+##----------------------------------------------------------------------------------------
+## Model configurations
+##----------------------------------------------------------------------------------------
+Starting.time <- Sys.time()
+
+## SHORT MODEL DESCRIPTION
+ModelDescription <- paste("tsfeature_s_moving_2_plus_a_moving_2", "+",
+                          format(Starting.time, "%Y%m%d@%H.%M"), ".", rhex(6), sep = "")
+
+## MODEL NAME
+Model_Name <- "linear"
+
+## ARGUMENTS FOR SPLINES
+splineArgs <- list(
+    ## the components of the design matrix.
+    comp = c("intercept", "covariates", "thinplate.s", "thinplate.a"),
+    ## the dimension of the knots for surface.
+    thinplate.s.dim = c(2, m),
+    ## no. of knots used in each covariates for the additive part. zero means no knots for
+    ## that covariates
+    thinplate.a.locate = rep(2, m))
+
+## PARAMETERS UPDATED USING GIBBS
+## You have to change this when "splineArgs$comp" has
+## changed. Coefficients are updated by directly sampling
+Params4Gibbs <- c("knots", "shrinkages", "covariance")
+
+## FIXED PARAMETERS
+Params_Fixed <- list(
+    ## which knots from which part of model are not updated.
+    "knots" = list(thinplate.s = 0, thinplate.a = 0),
+    "shrinkages" = 1:p, # the shrinkages for covariates not updated
+    "covariance"  = 0,   # zero means all are updated
+    "coefficients" = 0)
+
+## ARGUMENTS FOR PARTITION PARAMETERS (BATCHES UPDATE)
+## The split argument is only used when surface and additive subsets are of the
+## same length
+Params_subsetsArgs <- list(
+    "knots" = list(thinplate.s = list(N.subsets = 1, partiMethod = "systematic"),
+                   thinplate.a = list(N.subsets = 1, partiMethod = "systematic"), split = FALSE),
+
+    "shrinkages" = list(N.subsets = 1, partiMethod = "systematic"),
+    "covariance"  = list(N.subsets = 1, partiMethod = "systematic"),
+    "coefficients" = list(N.subsets = 1, partiMethod = "systematic"))
+
+##----------------------------------------------------------------------------------------
+## Parameters settings
+##----------------------------------------------------------------------------------------
+
+## TRANSFORMATION FUNCTION
+Params_Transform <- list("knots" = "identity",
+                         "shrinkages" = "log",
+                         "covariance" = "identity",
+                         "coefficients" = "identity")
+
+## HESSIAN METHODS
+hessMethods <- list("knots" = "outer",
+                    "shrinkages" = "outer",
+                    "covariance" = NA,
+                    "coefficients" = NA)
+
+## Propose method in Metropolis-Hasting
+propMethods <- list("knots" = "KStepNewton",
+                    "shrinkages" = "KStepNewton",
+                    "covariance" = "Inverse-Wishart", # random MH without K-step Newton
+                    "coefficients" = NA)
+
+##----------------------------------------------------------------------------------------
+## MCMC configurations
+##----------------------------------------------------------------------------------------
+
+## NO. OF ITERATIONS
+nIter <- 100
+
+## BURN-IN
+burn.in <- 0.2  # [0, 1) If 0: use all MCMC results.
+
+## LPDS SAMPLE SIZE
+LPDS.sampleProp <- 0.05 # Sample proportion to the total posterior after burn-in.
+
+## CROSS-VALIDATION
+cross.validation <- list(N.subsets = 0, # No. of folds. If 0:, no cross-validation.
+                         partiMethod = "systematic", # How to partition the data
+                         full.run = FALSE)     # Also include a full run.
+
+## NO. OF FINTE NEWTON MOVE FOR EACH PARAMETERS
+nNewtonSteps <- list("knots" = 1,
+                     "shrinkages" = 1,
+                     "covariance" = NA, # random MH
+                     "coefficients" = NA) # integrated out
+
+## THE DF. FOR A MULTIVARIATE T-PROPOSAL IN MH ALGORITHM.
+MH.prop.df <- list("knots" = 5,
+                   "shrinkages" = 5,
+                   "covariance" = NA,
+                   "coefficients" = NA)
+##----------------------------------------------------------------------------------------
+## Set up Priors
+##----------------------------------------------------------------------------------------
+
+## TODO: The prior should be set in the transformed scale when the linkages is not
+## "identity". Write a general function to handle this.
+
+## Regression
+knots.location.gen <- make.knots(x = x, method = "k-means", splineArgs)
+
+X.init <- d.matrix(x, knots = knots.location.gen, splineArgs)
+lm.init <- lm(Y~0+X.init)
+S0.init <- matrix(var(lm.init$residual), p, p)
+q <- dim(X.init)[2]
+
+## P MATRIX TYPE
+P.type <- c("identity", "identity", "identity") # can be "identity" or "X'X"
+## P.type <- c("X'X", "identity", "identity") # can be "identity" or "X'X"
+
+## PRIOR FOR COVARIANCE
+covariance.priType <- "Inverse-Wishart"
+covariance.df0 <- 10
+covariance.S0 <- S0.init # p-by-p, see Mardia p.158
+
+## PRIOR FOR COEFFICIENTS
+coefficients.priType <- "mvnorm"
+coefficients.mu0 <- matrix(0, q*p, 1)  # mean of B|Sigma, assume no covariates in.
+
+## PRIOR FOR KNOTS
+knots.priType <- "mvnorm"
+knots.mu0 <- knots.list2mat(knots.location.gen) # mean from k-means
+knots.Sigma0 <- make.knotsPriVar(x, splineArgs) # the covariance for each knots came from x'x
+knots.c <- n # The shrinkage
+
+## PRIOR FOR SHRINKAGES
+
+## how many components does the model have
+model.comp.len <- length(splineArgs[["comp"]][ "intercept" != splineArgs[["comp"]] ])
+                                        # how many components does the model have
+shrinkages.pri.trans <- convert.densParams(mean = n/2, var = (n/2)^2, linkage =
+                                           Params_Transform[["shrinkages"]]) # assume
+                                            # normal prior with "mean" and "var"
+shrinkages.priType <- "mvnorm"
+shrinkages.mu0 <- matrix(rep(shrinkages.pri.trans[1], p*model.comp.len)) # The mean of
+                                        # shrinkage,  "n" is unit information
+                                        # prior. (n*(X'X)^(-1))
+shrinkages.Sigma0 <- diag(rep(shrinkages.pri.trans[2], p), p*model.comp.len) # The variance
+                                        # for the shrinkage parameter.
+shrinkages.c <- 1 # The shrinkage
+
+## Organize the arguments
+priorArgs <- list(P.type = P.type,
+
+                  knots.priType = knots.priType,
+                  knots.mu0 = knots.mu0, # prior for knots
+                  knots.Sigma0 = knots.Sigma0,
+                  knots.c = knots.c,
+
+                  shrinkages.priType = shrinkages.priType,
+                  shrinkages.mu0 = shrinkages.mu0, # prior for shrinkages
+                  shrinkages.Sigma0 = shrinkages.Sigma0,
+                  shrinkages.c  = shrinkages.c,
+
+                  coefficients.priType = coefficients.priType,
+                  coefficients.mu0 = coefficients.mu0, # prior for coefficients
+
+                  covariance.priType = covariance.priType,
+                  covariance.df0 = covariance.df0, # prior for covariance
+                  covariance.S0 = covariance.S0)
+
+##----------------------------------------------------------------------------------------
+## Initial values
+##----------------------------------------------------------------------------------------
+## TODO: The initial values should be transformed into the new scale according to the
+## linkages if it is not "identity"
+
+## INITIAL KNOTS LOCATIONS, "list"
+INIT.knots <- knots.location.gen
+
+## INITIAL SHRINKAGE FOR MODEL COVARIANCE "matrix"
+INIT.shrinkages <- shrinkages.mu0
+
+## INITIAL COVARIANCE "matrix"
+INIT.covariance <- covariance.S0
+
+##########################################################################################
+##                                   System settings
+##########################################################################################
+
+##----------------------------------------------------------------------------------------
+## Initialize the data
+##----------------------------------------------------------------------------------------
+## Gradient function name
+gradhess.fun.name <- tolower(paste(Model_Name, "gradhess", sep = "_"))
+
+## Log posterior function name
+logpost.fun.name <-  tolower(paste(Model_Name, "logpost", sep = "_"))
+
+##----------------------------------------------------------------------------------------
+## Set up cross validation etc
+##----------------------------------------------------------------------------------------
+
+## The training($training) and testing($testing) structure.
+## If no cross-validation, $training is also $testing.
+## If full run is required, the last list in $training and $testing is for a full run.
+crossvalid.struc <- set.crossvalid(nObs = n, crossValidArgs = cross.validation)
+
+## No. of total runs
+nCross <- length(crossvalid.struc$training)
+
+## No. of training obs. in each data subset.
+nTraining <- unlist(lapply(crossvalid.struc$training, length))
+
+## Params
+Params <- list("knots" = knots.list2mat(INIT.knots),
+               "shrinkages" = INIT.shrinkages,
+               "covariance" = vech(INIT.covariance),
+               "coefficients" = matrix(NA, q, p))
+
+## The parameters subset structures.
+Params.sub.struc <- Params.subsets(p, splineArgs, Params_Fixed, Params_subsetsArgs)
+
+##----------------------------------------------------------------------------------------
+## Construct the output formats
+##----------------------------------------------------------------------------------------
+
+## NOTATIONS TO USE
+## The output is alway with "OUT.XXX"
+## The last dimension is always for the i:th cross-validation subsets.
+
+## Accept probabilities for MH.
+OUT.accept.probs <- mapply(function(x) array(NA, c(length(x), nIter, nCross)),
+                           Params.sub.struc, SIMPLIFY = FALSE)
+
+## Parameters updates in each MH step
+INIT.knots.mat <- knots.list2mat(INIT.knots)
+
+OUT.Params <- list("knots" = array(INIT.knots.mat, c(length(INIT.knots.mat), 1, nIter, nCross)),
+                   "shrinkages" = array(INIT.shrinkages, c(p*model.comp.len, 1, nIter, nCross)),
+                   "coefficients" = array(NA, c(q, p, nIter, nCross)),
+                   "covariance" = array(vech(INIT.covariance), c((p+1)*p/2, 1, nIter, nCross)))
+
+##########################################################################################
+##                                 Testings
+##########################################################################################
+## See the "tests" folder and tests at end of each function.
+
+##########################################################################################
+##                                   Main algorithm
+##########################################################################################
+
+##----------------------------------------------------------------------------------------
+## Stabilize the initial values
+##----------------------------------------------------------------------------------------
+## see "tests/test.init.BFGS.R" file
+
+##----------------------------------------------------------------------------------------
+## MovingKnots MCMC
+##----------------------------------------------------------------------------------------
+OUT.FITTED <- MovingKnots_MCMC(gradhess.fun.name = gradhess.fun.name,
+                               logpost.fun.name =  logpost.fun.name,
+                               nNewtonSteps =  nNewtonSteps,
+                               nIter = nIter,
+                               Params = Params,
+                               Params4Gibbs = Params4Gibbs,
+                               Params.sub.struc =  Params.sub.struc,
+                               hessMethods = hessMethods,
+                               Y = Y,
+                               x0 = x,
+                               splineArgs = splineArgs,
+                               priorArgs = priorArgs,
+                               MH.prop.df = MH.prop.df,
+                               Params_Transform = Params_Transform,
+                               propMethods = propMethods,
+                               crossvalid.struc = crossvalid.struc,
+                               OUT.Params = OUT.Params,
+                               OUT.accept.probs = OUT.accept.probs,
+                               burn.in = burn.in,
+                               LPDS.sampleProp = LPDS.sampleProp,
+                               track.MCMC = track.MCMC)
+
+##----------------------------------------------------------------------------------------
+## Save outputs to files
+##----------------------------------------------------------------------------------------
+# save.all(save.output, ModelDescription)
+
+cat(paste("Finished at", Sys.time(),"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n\n"))
+##########################################################################################
+##                                     THE END
+##########################################################################################
+
+```
+
+
+
+
+---
+
+3 全局最优化算法探索
+---
+
+首先尝试查找R中现有的全局最优化函数，在`nloptr`包中有一些现有的全局最优化函数，参考<https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms>.
+下面使用`nplotr()`在一些简单问题上进行尝试。
+
+```{r}
+library('nloptr')
+
+## Rosenbrock Banana function and gradient in separate functions
+eval_f <- function(x) {
+  return( 100 * (x[2] - x[1] * x[1])^2 + (1 - x[1])^2 )
+}
+
+eval_grad_f <- function(x) {
+  return( c( -400 * x[1] * (x[2] - x[1] * x[1]) - 2 * (1 - x[1]),
+             200 * (x[2] - x[1] * x[1])) )
+}
+
+
+# initial values
+x0 <- c( -1.2, 1 )
+
+opts <- list("algorithm"="NLOPT_LD_LBFGS",
+             "xtol_rel"=1.0e-8)
+
+# solve Rosenbrock Banana function
+res <- nloptr( x0=x0, 
+               eval_f=eval_f, 
+               eval_grad_f=eval_grad_f,
+               opts=opts)
+print( res )               
+```
+
+```{r}
+## Rosenbrock Banana function and gradient in one function
+# this can be used to economize on calculations
+eval_f_list <- function(x) {
+  return( list( "objective" = 100 * (x[2] - x[1] * x[1])^2 + (1 - x[1])^2,
+                "gradient"  = c( -400 * x[1] * (x[2] - x[1] * x[1]) - 2 * (1 - x[1]),
+                                 200 * (x[2] - x[1] * x[1])) ) )
+}
+
+# solve Rosenbrock Banana function using an objective function that
+# returns a list with the objective value and its gradient               
+res <- nloptr( x0=x0, 
+               eval_f=eval_f_list,
+               opts=opts)
+print( res )
+```
+
+```{r}
+# Example showing how to solve the problem from the NLopt tutorial.
+#
+# min sqrt( x2 )
+# s.t. x2 >= 0
+#      x2 >= ( a1*x1 + b1 )^3
+#      x2 >= ( a2*x1 + b2 )^3
+# where
+# a1 = 2, b1 = 0, a2 = -1, b2 = 1
+#
+# re-formulate constraints to be of form g(x) <= 0
+#      ( a1*x1 + b1 )^3 - x2 <= 0
+#      ( a2*x1 + b2 )^3 - x2 <= 0
+
+library('nloptr')
+
+
+# objective function
+eval_f0 <- function( x, a, b ){ 
+  return( sqrt(x[2]) )
+}
+
+# constraint function
+eval_g0 <- function( x, a, b ) {
+  return( (a*x[1] + b)^3 - x[2] )
+}
+
+# gradient of objective function
+eval_grad_f0 <- function( x, a, b ){ 
+  return( c( 0, .5/sqrt(x[2]) ) )
+}
+
+# jacobian of constraint
+eval_jac_g0 <- function( x, a, b ) {
+  return( rbind( c( 3*a[1]*(a[1]*x[1] + b[1])^2, -1.0 ), 
+                 c( 3*a[2]*(a[2]*x[1] + b[2])^2, -1.0 ) ) )
+}
+
+
+# functions with gradients in objective and constraint function
+# this can be useful if the same calculations are needed for
+# the function value and the gradient
+eval_f1 <- function( x, a, b ){ 
+  return( list("objective"=sqrt(x[2]), 
+               "gradient"=c(0,.5/sqrt(x[2])) ) )
+}
+
+eval_g1 <- function( x, a, b ) {
+  return( list( "constraints"=(a*x[1] + b)^3 - x[2],
+                "jacobian"=rbind( c( 3*a[1]*(a[1]*x[1] + b[1])^2, -1.0 ), 
+                                  c( 3*a[2]*(a[2]*x[1] + b[2])^2, -1.0 ) ) ) )
+}
+
+
+# define parameters
+a <- c(2,-1)
+b <- c(0, 1)
+```
+
+```{r}
+# Solve using NLOPT_LD_MMA with gradient information supplied in separate function
+res0 <- nloptr( x0=c(1.234,5.678), 
+                eval_f=eval_f0, 
+                eval_grad_f=eval_grad_f0,
+                lb = c(-Inf,0), 
+                ub = c(Inf,Inf), 
+                eval_g_ineq = eval_g0,
+                eval_jac_g_ineq = eval_jac_g0,                
+                opts = list("algorithm"="NLOPT_LD_MMA"),
+                a = a, 
+                b = b )
+print( res0 )
+```
+
+```{r}
+# Solve using NLOPT_LN_COBYLA without gradient information
+res1 <- nloptr( x0=c(1.234,5.678), 
+                eval_f=eval_f0, 
+                lb = c(-Inf,0), 
+                ub = c(Inf,Inf), 
+                eval_g_ineq = eval_g0, 
+                opts = list("algorithm"="NLOPT_LN_COBYLA"),
+                a = a, 
+                b = b )
+print( res1 )
+```
+
+```{r}
+# Solve using NLOPT_LD_MMA with gradient information in objective function
+res2 <- nloptr( x0=c(1.234,5.678), 
+                eval_f=eval_f1, 
+                lb = c(-Inf,0), 
+                ub = c(Inf,Inf), 
+                eval_g_ineq = eval_g1, 
+                opts = list("algorithm"="NLOPT_LD_MMA", "check_derivatives"=TRUE),
+                a = a,
+                b = b )
+print( res2 )
+```
+
+
+在*nloptr()*对算法进行调整是在*opts*参数中进行设置，以*NLOPT_LD_MMA*为例，中间的LD有其含义：
+`G/L：Global/Local optimization`
+`N/D: Derivative-free/Gradient-based algorithm`
+
+另外还有一个函数*direct()*可以用于全局优化，*directL()*用于局部优化。
+```{r}
+##### direct()
+### Minimize the Hartmann6 function
+hartmann6 <- function(x) {
+  n <- length(x)
+  a <- c(1.0, 1.2, 3.0, 3.2)
+  A <- matrix(c(10.0,  0.05, 3.0, 17.0,
+                3.0, 10.0,  3.5,  8.0,
+                17.0, 17.0,  1.7,  0.05,
+                3.5,  0.1, 10.0, 10.0,
+                1.7,  8.0, 17.0,  0.1,
+                8.0, 14.0,  8.0, 14.0), nrow=4, ncol=6)
+  B  <- matrix(c(.1312,.2329,.2348,.4047,
+                 .1696,.4135,.1451,.8828,
+                 .5569,.8307,.3522,.8732,
+                 .0124,.3736,.2883,.5743,
+                 .8283,.1004,.3047,.1091,
+                 .5886,.9991,.6650,.0381), nrow=4, ncol=6)
+  fun <- 0.0
+  for (i in 1:4) {
+    fun <- fun - a[i] * exp(-sum(A[i,]*(x-B[i,])^2))
+  }
+  return(fun)
+}
+S <- directL(hartmann6, rep(0,6), rep(1,6),
+             nl.info = TRUE, control=list(xtol_rel=1e-8, maxeval=1000))
+```
+
+
+---
+
+4 Expected Improvement (EI)
+---
+由于没有找到EGO算法的函数，因此需要自己构造算法结构。回到Jones(1998)的论文中介绍的EGO算法，由于已经可以构造出响应面模型，因此不必采用原文中的Kriging模型，我们从EI准则开始分析。
+
+![EI 1](C:/Users/cheng/Downloads/1.jpg)
+
+![EI 2](C:/Users/cheng/Downloads/2.jpg)
+
+
+**问题：**
+fmin是current best function value, 对应到响应面中是什么？
+

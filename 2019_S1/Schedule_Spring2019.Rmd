@@ -14,7 +14,7 @@ Date | Reporter 	|  Paper
 :------------------------:|:--------------------------------:|-------------------------------------------------------------------------------------------------------------
 2019/03/10 	| Fan Jia 	| Yin Z, Shen Y. On the dimensionality of word embedding[C]//Advances in Neural Information Processing Systems. 2018: 895-906.  	
 | | 
-2019/03/17 	| Ying He 	|  	
+2019/03/17 	| Ying He 	| Deudon M. Learning semantic similarity in a continuous space[C]//Advances in Neural Information Processing Systems. 2018: 994-1005.	
 | | 
 2019/03/24 	| Yuanyuan Wang 	|  	
 | | 

@@ -1,0 +1,48 @@
+---
+title: "Schedule"
+author: ""
+date: "Spring 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Date | Reporter 	|  Paper 
+:------------------------:|:--------------------------------:|-------------------------------------------------------------------------------------------------------------
+2019/03/10 	| Fan Jia 	| Yin Z, Shen Y. On the dimensionality of word embedding[C]//Advances in Neural Information Processing Systems. 2018: 895-906.  	
+| | 
+2019/03/17 	| Ying He 	|  	
+| | 
+2019/03/24 	| Yuanyuan Wang 	|  	
+| | 
+2019/03/31 	| Xixi Li 	| Abid A, Zou J Y. Learning a Warping Distance from Unlabeled Time Series Using Sequence Autoencoders[C]//Advances in Neural Information Processing Systems. 2018: 10568-10578. 	
+| | 
+2019/04/07 	| Yawen Guo 	|  	
+| |
+2019/04/14 	| Qing Yuan 	|  	
+| |
+2019/04/21 	| Yu Liu 	|  	
+| |
+2019/04/28 	| Yaodong Wang 	| Yan X, Zhang W, Ma L, et al. Parsimonious Quantile Regression of Financial Asset Tail Dynamics via Sequential Learning[C]//Advances in Neural Information Processing Systems. 2018: 1582-1592. 	
+| |
+2019/05/05 	| Xiaoqian Wang 	|  	
+| |
+2019/05/12 	| Yi Zhang 	|  	
+| |
+2019/05/19 	| Li Li 	| Amirkhani A, Papageorgiou E I, Mosavi M R, et al. A novel medical decision support system based on fuzzy cognitive maps enhanced by intuitive and learning capabilities for modeling uncertainty[J]. Applied Mathematics and Computation, 2018, 337: 562-582.
+| |
+2019/05/26 	| Qiuhong Lai 	|  	
+| |
+2019/06/02 	|  	|  	
+| |
+2019/06/09 	|  	|  	
+| |
+2019/06/16 	|  	|  	
+| |
+2019/06/23 	|  	|  	
+| |
+2019/06/30 	|  	|  	
+

@@ -22,7 +22,7 @@ Date | Reporter 	|  Paper
 | | 
 2019/04/07 	| -	| (Tomb-Sweeping Day)
 | |
-2019/04/14 	| Yawen Guo 	|  	
+2019/04/14 	| Yawen Guo 	| Liu X, He P, Chen W, et al. Multi-Task Deep Neural Networks for Natural Language Understanding[J]. arXiv preprint arXiv:1901.11504, 2019.  	
 | |
 2019/04/21 	| Qing Yuan 	|  	
 | |

@@ -18,29 +18,25 @@ Date | Reporter 	|  Paper
 | | 
 2019/03/24 	| Yuanyuan Wang 	| Goodfellow, Ian, et al. "Generative adversarial nets." Advances in neural information processing systems. 2014.
 | | 
-2019/03/31 	| -	| ---
-| | 
-2019/04/07 	| -	| (Tomb-Sweeping Day)
-| |
 2019/04/14 	| Yawen Guo 	| Liu X, He P, Chen W, et al. Multi-Task Deep Neural Networks for Natural Language Understanding[J]. arXiv preprint arXiv:1901.11504, 2019.  	
 | |
 2019/04/21 	| Xixi Li | Text Mining Seminar
 | |
-2019/04/28 	| Qing Yuan 	|  	
+2019/05/19 	| Qing Yuan 	| Wang L, Sun M, Zhao W, et al. Yuanfudao at SemEval-2018 Task 11: three-way attention and relational knowledge for commonsense machine comprehension[J]. arXiv preprint arXiv:1803.00191, 2018.
 | |
-2019/05/05 	| Yu Liu 	|  	
+2019/06/02 	| Yaodong Wang 	| Afshar H M, Domke J. Reflection, refraction, and hamiltonian monte carlo[C]//Advances in Neural Information Processing Systems. 2015: 3007-3015.
 | |
-2019/05/12 	| Yaodong Wang 	| Yan X, Zhang W, Ma L, et al. Parsimonious Quantile Regression of Financial Asset Tail Dynamics via Sequential Learning[C]//Advances in Neural Information Processing Systems. 2018: 1582-1592. 	
+2019/06/09 	| Yu Liu 	|  	
 | |
-2019/05/19 	| Xiaoqian Wang 	|  	
+2019/06/16 	| Xiaoqian Wang 	|  	
 | |
-2019/05/26 	| Yi Zhang 	|  	
+2019/06/23 	| Yi Zhang 	|  	
 | |
-2019/06/02 	| Li Li 	| Amirkhani A, Papageorgiou E I, Mosavi M R, et al. A novel medical decision support system based on fuzzy cognitive maps enhanced by intuitive and learning capabilities for modeling uncertainty[J]. Applied Mathematics and Computation, 2018, 337: 562-582.
+2019/06/30 	| Li Li 	| Amirkhani A, Papageorgiou E I, Mosavi M R, et al. A novel medical decision support system based on fuzzy cognitive maps enhanced by intuitive and learning capabilities for modeling uncertainty[J]. Applied Mathematics and Computation, 2018, 337: 562-582.
 | |
-2019/06/09 	| Qiuhong Lai 	|  	
+2019/07/07 	| Qiuhong Lai 	|  	
 | |
-2019/06/16 	| Xixi Li	| Abid A, Zou J Y. Learning a Warping Distance from Unlabeled Time Series Using Sequence Autoencoders[C]//Advances in Neural Information Processing Systems. 2018: 10568-10578. 
+2019/07/14 	| Xixi Li	| Abid A, Zou J Y. Learning a Warping Distance from Unlabeled Time Series Using Sequence Autoencoders[C]//Advances in Neural Information Processing Systems. 2018: 10568-10578. 
 | |
 
 
